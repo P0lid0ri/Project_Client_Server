@@ -1,74 +1,67 @@
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.PrintWriter;
+import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.Scanner;
+
 
 public class Server {
-    private int port;
+    private int porta;
     private ServerSocket serverSocket;
-    private Socket socket;
+    private Socket clientSocket;
     private InputStream is;
-    private Scanner streamIn;
-    private OutputStream os;
-    private PrintWriter streamOut;
+    private InputStream in;
+    private OutputStream out;
+    public static final String giallo = "\u001B[33m";
+    public static final String reset = "\u001B[0m";
 
-    public Server(int port) {
-        this.port = port;
+    public Server(int porta) {
+        this.porta = porta;
+        try{
+            serverSocket=new ServerSocket(porta);
+            System.out.println("Connesione Riuscita: "+porta);
+        } catch (IOException e){
+            e.printStackTrace();
+            System.err.println("Errore connesione porta ");
+        }
+
     }
 
-    public void attendi() {
+    public Socket attendi() {
         try {
-            serverSocket = new ServerSocket(port);
-            System.out.println("Server in ascolto sulla porta " + port + ". \n");
-
-            socket = serverSocket.accept();
-            System.out.println("Connessione stabilita e richiesta ricevuta!");
-            System.out.println("Socket server: " + socket.getLocalSocketAddress());
-            System.out.println("Socket client: " + socket.getRemoteSocketAddress());
-            System.out.print("\007");
-            System.out.flush();
-
-            os = socket.getOutputStream();
-            streamOut = new PrintWriter(os);
-            is = socket.getInputStream();
-            streamIn = new Scanner(is);
+            clientSocket = serverSocket.accept();
+            System.out.println("Connesione ricevuta da :  " + clientSocket.getInetAddress());
         } catch (IOException e) {
             e.printStackTrace();
         }
+        return clientSocket;
     }
 
-    public void scrivi(String messaggio) {
-        System.out.println("Spedisco il messaggio al client!");
-        streamOut.println(messaggio);
-        streamOut.flush();
-    }
-
-    public String leggi() {
-        System.out.println("Leggo il messaggio del client!");
-        return streamIn.next();
-    }
-
-    public void chiudi() {
-        try {
-            if (socket != null) {
-                socket.close();
+    public void chiudi () {
+        try{
+            if (clientSocket != null){
+                clientSocket.close();
             }
-            System.out.println("Connessione chiusa!");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void termina() {
-        try {
-            if (serverSocket != null) {
+            if(serverSocket !=null){
                 serverSocket.close();
             }
+        }catch (IOException e){
+            e.printStackTrace();
+        }
+    }
+
+    public void leggi() {
+        InputStream inputStream = null;
+        String message = null;
+
+        try {
+            inputStream = clientSocket.getInputStream();
+            BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+            while ((message = reader.readLine()) != null) {
+                System.out.println("Messaggio del client: " + giallo + message + reset);
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
-}
+    }
+
+

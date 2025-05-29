@@ -1,69 +1,60 @@
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.PrintWriter;
-import java.net.ConnectException;
-import java.net.InetAddress;
-import java.net.Socket;
-import java.util.Scanner;
+import java.io.*;
+import java.net.*;
 
 public class Client {
-    public static final String BLUE = "\u001B[34m";
-    public static final String RESET = "\u001B[0m";
-    private int port;
-    private InetAddress serverAddress;
+    private String nome;
     private Socket socket;
-    private InputStream is;
-    private Scanner streamIn;
-    private OutputStream os;
-    private PrintWriter streamOut;
+    private String colore;
+    private OutputStream outputStream;
+    private PrintWriter out;
 
-    public Client(int port) {
-        this.port = port;
+
+
+
+    public Client(String nome) {
+        this.nome = nome;
+    }
+    public Client(String nome, String colore) {
+        this.nome = nome;
+        this.colore = colore;
     }
 
-    public void connetti() {
+    public void connetti(String nomeServer, int portaServer) {
         try {
-            serverAddress = InetAddress.getLocalHost();
-            System.out.println("Indirizzo del server trovato!");
-            socket = new Socket(serverAddress, port);
-            System.out.println("Connessione aperta");
-            System.out.println(BLUE + "Socket client: " + socket.getLocalSocketAddress() + RESET);
-            System.out.println("Socket server: " + socket.getRemoteSocketAddress());
-
-            os = socket.getOutputStream();
-            streamOut = new PrintWriter(os);
-            streamOut.flush();
-
-            is = socket.getInputStream();
-            streamIn = new Scanner(is);
-        } catch (ConnectException e) {
-            System.err.println("Server non disponibile!");
+            //Crea una connessione al server
+            socket = new Socket(nomeServer, portaServer);
+            System.out.println("Connessione al server " + nomeServer + " sulla porta " + portaServer + " riuscita.");
         } catch (IOException e) {
-            System.err.println("Errore di I/O");
+            System.err.println("Errore nella connessione al server");
         }
     }
 
-    public String leggi() {
-        return streamIn.nextLine();
-    }
 
     public void scrivi(String messaggio) {
-        streamOut.println(messaggio);
-        streamOut.flush();
+        try {
+            // Ottieni il flusso di output del socket
+            outputStream = socket.getOutputStream();
+        }
+        catch (IOException e) {
+            System.err.println("Errore nella connessione al server");
+        }
+        //PrintWriter per inviare una stringa tramite il flusso
+        out = new PrintWriter(outputStream, true);  //true per auto-flush(svuota il buffer e invia)
+
+        out.println(messaggio);
     }
 
-    public void chiudi() {
-        try {
-            if (socket != null) {
-                socket.close();
-                System.out.println("Socket distrutto");
+    public void inpTastiera(){
+        BufferedReader stdIn = new BufferedReader(new InputStreamReader(System.in));
+        String userInput=null;
+        while (true) {
+            try {
+                if (!((userInput = stdIn.readLine()) != null)) break;
+            } catch (IOException e) {
+                e.printStackTrace();
             }
-            if (streamIn != null) {
-                streamIn.close();
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
+            scrivi(userInput);
         }
     }
 }
